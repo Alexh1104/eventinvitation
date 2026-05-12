@@ -868,7 +868,7 @@
 
       <h2 class="letter-heading">¡Cumplí mi primer mes!</h2>
 
-      <img class="letter-photo" src="img/osito3.png" alt="Emerick Zarek" />
+      <img class="letter-photo" src="img/osito.png" alt="Emerick Zarek" />
 
       <div class="letter-names">Emerick Zarek</div>
 
@@ -930,9 +930,8 @@
 // ══════════════════════════════════════════════
 //  LÓGICA DEL SOBRE
 // ══════════════════════════════════════════════
-let letterOpen  = false;
-let firstOpen   = true;
-let musicStarted = false;
+let letterOpen = false;
+let firstOpen  = true;
 
 function openLetter() {
   const envelope = document.getElementById('envelope');
@@ -964,7 +963,6 @@ function openLetter() {
   }, 580);
 
   if (firstOpen) { hint.classList.add('gone'); firstOpen = false; }
-  if (!musicStarted) startMusic();
 }
 
 function closeLetter() {
@@ -1011,9 +1009,35 @@ document.addEventListener('keydown', e => {
 const bgAudio = document.getElementById('bg-audio');
 bgAudio.volume = 0.45;
 
+// Móvil (WhatsApp): el tap del link cuenta como gesto → play con sonido al 1s.
+// Desktop: play bloqueado → corre muted (siempre permitido) y se desmutea
+//          en el primer click del usuario (naturalmente el sobre).
+setTimeout(() => {
+  bgAudio.play().then(() => {
+    const btn = document.getElementById('music-btn');
+    btn.textContent = '🔊';
+    btn.classList.remove('muted');
+    btn.classList.add('playing');
+  }).catch(() => {
+    bgAudio.muted = true;
+    bgAudio.play().catch(() => {});
+    function unmute() {
+      bgAudio.muted = false;
+      const btn = document.getElementById('music-btn');
+      btn.textContent = '🔊';
+      btn.classList.remove('muted');
+      btn.classList.add('playing');
+      document.removeEventListener('click',      unmute);
+      document.removeEventListener('touchstart', unmute);
+    }
+    document.addEventListener('click',      unmute);
+    document.addEventListener('touchstart', unmute);
+  });
+}, 1000);
+
 function startMusic() {
-  bgAudio.play().catch(() => {});
-  musicStarted = true;
+  bgAudio.muted = false;
+  if (bgAudio.paused) bgAudio.play().catch(() => {});
   const btn = document.getElementById('music-btn');
   btn.textContent = '🔊';
   btn.classList.remove('muted');
@@ -1029,7 +1053,7 @@ function stopMusic() {
 }
 
 function toggleMusic() {
-  if (bgAudio.paused) startMusic();
+  if (bgAudio.paused || bgAudio.muted) startMusic();
   else stopMusic();
 }
 
